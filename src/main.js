@@ -1,7 +1,8 @@
-import { last               } from "./utilities.js";
 import { build_icons        } from "./icons.js";
 import { build_gui, draw    } from "./gui.js";
 import { FEN_2_state        } from "./fen.js";
+
+export const last = (A) => A[A.length - 1];
 
 const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 

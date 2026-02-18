@@ -1,4 +1,4 @@
-import { append_el } from "./utilities.js";
+import { append_el } from "./gui.js";
 
 export const build_icons = () => {
     const L = [];

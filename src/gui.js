@@ -1,6 +1,12 @@
-import { append_el } from "./utilities.js";
 import { state_2_FEN } from "./fen.js";
 import { p_2_color, p_2_type, is_capture } from "./main.js";
+
+export const append_el = (tag, par, attributes = {}) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attributes)) { el[k] = v; }
+    par.appendChild(el);
+    return el;
+};
 
 export const build_gui = () => {
     const B = document.body;
