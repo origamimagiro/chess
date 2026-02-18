@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Chess</title>
+  <style>
+    button, div, textarea  { position: absolute; }
+    #reset  { top: 155px; left: 280px; }
+    #undo   { top: 185px; left: 280px; }
+    #dump   { top: 215px; left: 280px; }
+    #submit { top: 245px; left: 280px; }
+    #data   { top: 280px; left: 10px; font-family: monospace; resize: none; }
+    .square { width:  32px; height:  32px; background-size: cover; }
+    .took   { width:  16px; height:  16px; background-size: cover; }
+    #board  { width: 256px; height: 256px; border: 2px solid black; }
+    #taken  { width: 256px; height: 32px; left: 280px; }
+    .light  { background-color: #DDD; }
+    .dark   { background-color: #888; }
+    .active { background-color: #FFF; }
+    .move::after, .take::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 4px;
+        position: absolute;
+        top: 12px;
+        left: 12px;
+    }
+    .move::after {
+        background: #FFF;
+        box-shadow: 0px 0px 0px 1px #000;
+    }
+    .take::after {
+        background: #555;
+        box-shadow: 0px 0px 0px 1px #FFF;
+    }
+    .checkmate { background-color: #F00; }
+    .check { box-shadow: inset 0px 0px 0px 2px #F00; }
+    .stalemate { background-color: #0FF; }
+  </style>
+</head>
+<body>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
