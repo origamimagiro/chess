@@ -1,3 +1,3 @@
 # chess
 
-[https://github.com/origamimagiro/chess](https://github.com/origamimagiro/chess)
+[https://origamimagiro.github.io/chess/)](https://origamimagiro.github.io/chess/)
