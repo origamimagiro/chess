@@ -1,7 +1,5 @@
-import { state_2_FEN, xy_2_sq, x_2_f, y_2_r } from "./fen.js";
-import { p_2_color, p_2_type,
-    accessible_moves, filter_moves, attacked,
-} from "./main.js";
+import { state_2_FEN } from "./fen.js";
+import { p_2_color, p_2_type } from "./main.js";
 
 export const append_el = (tag, par, attributes = {}) => {
     const el = document.createElement(tag);
@@ -13,14 +11,14 @@ export const append_el = (tag, par, attributes = {}) => {
 export const build_gui = () => {
     const B = document.body;
     const board = append_el("div", B, {id: "board"});
-    const data = append_el("textarea", B, {id: "data", rows: 1, cols: 93});
+    const data = append_el("textarea", B, {id: "data"});
     const game = append_el("textarea", B, {id: "game"});
     game.disabled = true;
     const reset  = append_el("button", B, {id:  "reset", innerHTML:  "Reset"});
     const undo   = append_el("button", B, {id:   "undo", innerHTML:   "Undo"});
     const dump   = append_el("button", B, {id:   "dump", innerHTML:   "Dump"});
     const submit = append_el("button", B, {id: "submit", innerHTML: "Submit"});
-    const gui = {state: undefined, history: [], data, game,
+    const gui = {state: undefined, history: [], map: new Map(), data, game,
         board_divs: undefined, taken_divs: undefined,
         active: undefined, promotion: false,
         moves: Array(8).fill().map(() => Array(8).fill().map(() => [])),
@@ -116,54 +114,20 @@ export const draw = (gui) => {
             }
         }
     }
-    gui.data.value = state_2_FEN(gui.state);
-    if (gui.history.length > 0) {
-        const [state, move] = gui.history[gui.history.length - 1];
-        gui.game.value = board_move_2_alg(state, move, gui.state);
-    }
-};
-
-const board_move_2_alg = (s1, move, s2) => {
-    const [type, [sx, sy], [dx, dy], aux, status] = move;
-    const {board, turn, enpassant, castle} = s1;
-    const p = board[sy][sx];
-    const t = p_2_type(p);
-    if (type == 'c') { return (dx == 6) ? '0-0' : '0-0-0'; }
-    const suff = (
-        (status == "check") ? "+" : (
-        (status == "checkmate") ? "++" : ""
-    ));
-    let pre = ((type == 'x') ? 'x' : '') + xy_2_sq(dx, dy);
-    if (t == 'P') {
-        if (type == 'x') { pre = x_2_f(sx) + pre; }
-        const t2 = p_2_type(s2.board[dy][dx]);
-        if (t2 != 'P') { pre += "=" + t2; }
-    } else {
-        const same = [];
-        const b = (turn == 'w') ? 'b' : 'w';
-        const A = attacked(board, b);
-        let dup = false, row = false, col = false;
-        for (let y = 0; y < 8; ++y) {
-            for (let x = 0; x < 8; ++x) {
-                if (board[y][x] != p) { continue; }
-                if ((sx == x) && (sy == y)) { continue; }
-                const raw = accessible_moves(x, y, board, enpassant, castle, A);
-                const moves = filter_moves(x, y, board, turn, raw);
-                for (const m of moves) {
-                    const [type, [dx2, dy2], aux] = m;
-                    if ((dx == dx2) && (dy == dy2)) {
-                        dup = true;
-                        row ||= (y == sy);
-                        col ||= (x == sx);
-                    }
-                }            
-            }
+    const lines = [];
+    const w = 10;
+    for (const [state, m] of gui.history) {
+        const {turn, move} = state;
+        const L = [];
+        if ((turn == 'w') || (lines.length == 0)) { 
+            L.push(`${move}. `.padStart(5));
+            if (turn == 'b') { L.push(''.padEnd(w)); }
         }
-        const amb = !dup ? "" : (
-            (row && col) ? xy_2_sq(sx, sy) : (
-            col ? y_2_r(sy) : x_2_f(sx)
-        ));
-        pre = t + amb + pre; 
+        L.push(`${m[5]}`.padEnd(w));
+        L.push((turn == 'w') ? "" : "\n");
+        lines.push(L.join("")); 
     }
-    return pre + suff;
+    gui.game.value = lines.join("");
+    gui.game.scrollTop = gui.game.scrollHeight;
+    gui.data.value = state_2_FEN(gui.state);
 };

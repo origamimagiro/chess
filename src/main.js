@@ -1,6 +1,6 @@
 import { build_icons        } from "./icons.js";
 import { build_gui, draw    } from "./gui.js";
-import { FEN_2_state        } from "./fen.js";
+import { state_2_FEN, FEN_2_state, xy_2_sq, x_2_f, y_2_r } from "./fen.js";
 
 const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -13,10 +13,13 @@ const copy_board = (B1, B2) => {
     } }
 };
 
+const state_2_key = (state) => state_2_FEN(state).split(" ")[0];
+
 window.onload = () => {
     build_icons();
     const {reset, undo, dump, submit, gui} = build_gui();
     gui.state = FEN_2_state(START);
+    gui.map.set(state_2_key(gui.state), 1);
     for (let y = 0; y < 8; ++y) { for (let x = 0; x < 8; ++x) {
         gui.board_divs[y][x].onclick = () => click_square(x, y, gui);
     } }
@@ -25,14 +28,23 @@ window.onload = () => {
         gui.history.length = 0;
         gui.active = undefined;
         gui.promotion = false;
+        gui.map.clear();
     };
     reset.onclick = () => {
         clear_state();
         gui.state = FEN_2_state(START);
+        gui.map.set(state_2_key(gui.state), 1);
         update(gui);
     }
     undo.onclick = () => {
         if (gui.history.length == 0) { return; }
+        const key = state_2_key(gui.state);
+        const k = gui.map.get(key);
+        if (k == 1) {
+            gui.map.delete(key);
+        } else {
+            gui.map.set(key, k - 1);
+        }
         const [state, move] = gui.history.pop(); 
         gui.state = state;
         gui.active = undefined;
@@ -43,6 +55,7 @@ window.onload = () => {
         const state = FEN_2_state(data.value);
         if (state != undefined) {
             clear_state();
+            gui.map.set(state_2_key(state), 1);
             gui.state = state;
         }
         update(gui);
@@ -223,7 +236,10 @@ const update = (gui) => {
             gui.moves[y][x] = moves;
         }
     }
-    if ((pieces == 2) && (kings[b] != undefined) && (kings[w] != undefined)) {
+    const key = state_2_key(gui.state);
+    if ((gui.map.get(key) == 3) ||
+        ((pieces == 2) && (kings[b] != undefined) && (kings[w] != undefined))
+    ) {
         stale = true;
         for (const c of ['w', 'b']) {
             const [kx, ky] = kings[c];
@@ -236,7 +252,10 @@ const update = (gui) => {
         : (stale ? "stalemate" : "normal")
     );
     if (gui.history.length > 0) {
-        gui.history[gui.history.length - 1][1][4] = gui.status;
+        const [state, move] = gui.history[gui.history.length - 1];
+        move[4] = gui.status;
+        const alg = board_move_2_alg(state, move, gui.state);;
+        move[5] = alg;
     }
     draw(gui);
 };
@@ -297,10 +316,58 @@ const click_square = (x, y, gui) => {
             const turn = (state.turn == 'w') ? 'b' : 'w';
             const move = state.move + ((turn == 'w') ? 1 : 0);
             gui.state = {board, turn, castle, enpassant, halfmove, move};
-            gui.history.push([state, [type, [sx, sy], [dx, dy], aux, gui.status]]);
+            gui.history.push([state, [type, [sx, sy], [dx, dy], aux,
+                gui.status, undefined]]);
+            const key = state_2_key(gui.state);
+            gui.map.set(key, 1 + (gui.map.get(key) ?? 0));
             break;
         }
         if (!gui.promotion) { gui.active = undefined; }
         update(gui);
     }
+};
+
+const board_move_2_alg = (s1, move, s2) => {
+    const [type, [sx, sy], [dx, dy], aux, status] = move;
+    const {board, turn, enpassant, castle} = s1;
+    const p = board[sy][sx];
+    const t = p_2_type(p);
+    if (type == 'c') { return (dx == 6) ? '0-0' : '0-0-0'; }
+    const suff = (
+        (status == "check") ? "+" : (
+        (status == "checkmate") ? "++" : ""
+    ));
+    let pre = ((type == 'x') ? 'x' : '') + xy_2_sq(dx, dy);
+    if (t == 'P') {
+        if (type == 'x') { pre = x_2_f(sx) + pre; }
+        const t2 = p_2_type(s2.board[dy][dx]);
+        if (t2 != 'P') { pre += "=" + t2; }
+    } else {
+        const same = [];
+        const b = (turn == 'w') ? 'b' : 'w';
+        const A = attacked(board, b);
+        let dup = false, row = false, col = false;
+        for (let y = 0; y < 8; ++y) {
+            for (let x = 0; x < 8; ++x) {
+                if (board[y][x] != p) { continue; }
+                if ((sx == x) && (sy == y)) { continue; }
+                const raw = accessible_moves(x, y, board, enpassant, castle, A);
+                const moves = filter_moves(x, y, board, turn, raw);
+                for (const m of moves) {
+                    const [type, [dx2, dy2], aux] = m;
+                    if ((dx == dx2) && (dy == dy2)) {
+                        dup = true;
+                        row ||= (y == sy);
+                        col ||= (x == sx);
+                    }
+                }            
+            }
+        }
+        const amb = !dup ? "" : (
+            (row && col) ? xy_2_sq(sx, sy) : (
+            col ? y_2_r(sy) : x_2_f(sx)
+        ));
+        pre = t + amb + pre; 
+    }
+    return pre + suff;
 };
