@@ -1,5 +1,7 @@
-import { state_2_FEN } from "./fen.js";
-import { p_2_color, p_2_type, last } from "./main.js";
+import { state_2_FEN, xy_2_sq, x_2_f, y_2_r } from "./fen.js";
+import { p_2_color, p_2_type,
+    accessible_moves, filter_moves, attacked,
+} from "./main.js";
 
 export const append_el = (tag, par, attributes = {}) => {
     const el = document.createElement(tag);
@@ -48,7 +50,7 @@ const ORDER = {
     P: 1, N: 2, B: 3, R: 4, Q: 5,
 };
 export const draw = (gui) => {
-    const {board, turn} = last(gui.states);
+    const {board, turn} = gui.state;
     for (let y = 0; y < 8; ++y) {
         for (let x = 0; x < 8; ++x) {
             const div = gui.board_divs[y][x];
@@ -108,23 +110,60 @@ export const draw = (gui) => {
         } else {
             gui.board_divs[y][x].classList.add("active");
             for (const move of gui.moves[y][x]) {
-                const [type, _, [dx, dy]] = move;
+                const [type, [dx, dy]] = move;
                 gui.board_divs[dy][dx].classList.add(
                     (type == 'x') ? "take" : "move");
             }
         }
     }
-    gui.data.value = state_2_FEN(last(gui.states));
-    gui.game.value = [
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-        "1. e4  e5", "2. Ne3  Nc6",
-    ].join("\n");
+    gui.data.value = state_2_FEN(gui.state);
+    if (gui.history.length > 0) {
+        const [state, move] = gui.history[gui.history.length - 1];
+        gui.game.value = board_move_2_alg(state, move, gui.state);
+    }
+};
+
+const board_move_2_alg = (s1, move, s2) => {
+    const [type, [sx, sy], [dx, dy], aux, status] = move;
+    const {board, turn, enpassant, castle} = s1;
+    const p = board[sy][sx];
+    const t = p_2_type(p);
+    if (type == 'c') { return (dx == 6) ? '0-0' : '0-0-0'; }
+    const suff = (
+        (status == "check") ? "+" : (
+        (status == "checkmate") ? "++" : ""
+    ));
+    let pre = ((type == 'x') ? 'x' : '') + xy_2_sq(dx, dy);
+    if (t == 'P') {
+        if (type == 'x') { pre = x_2_f(sx) + pre; }
+        const t2 = p_2_type(s2.board[dy][dx]);
+        if (t2 != 'P') { pre += "=" + t2; }
+    } else {
+        const same = [];
+        const b = (turn == 'w') ? 'b' : 'w';
+        const A = attacked(board, b);
+        let dup = false, row = false, col = false;
+        for (let y = 0; y < 8; ++y) {
+            for (let x = 0; x < 8; ++x) {
+                if (board[y][x] != p) { continue; }
+                if ((sx == x) && (sy == y)) { continue; }
+                const raw = accessible_moves(x, y, board, enpassant, castle, A);
+                const moves = filter_moves(x, y, board, turn, raw);
+                for (const m of moves) {
+                    const [type, [dx2, dy2], aux] = m;
+                    if ((dx == dx2) && (dy == dy2)) {
+                        dup = true;
+                        row ||= (y == sy);
+                        col ||= (x == sx);
+                    }
+                }            
+            }
+        }
+        const amb = !dup ? "" : (
+            (row && col) ? xy_2_sq(sx, sy) : (
+            col ? y_2_r(sy) : x_2_f(sx)
+        ));
+        pre = t + amb + pre; 
+    }
+    return pre + suff;
 };

@@ -1,10 +1,10 @@
 // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
 
-const x_2_f = (x) => String.fromCodePoint('a'.charCodeAt(0) + x);
+export const x_2_f = (x) => String.fromCodePoint('a'.charCodeAt(0) + x);
 const f_2_x = (f) => f.charCodeAt(0) - 'a'.charCodeAt(0);
-const y_2_r = (y) => 8 - y;
+export const y_2_r = (y) => 8 - y;
 const r_2_y = (r) => 8 - Number(r);
-const xy_2_sq = (x, y) => [x_2_f(x), y_2_r(y)].join("");
+export const xy_2_sq = (x, y) => [x_2_f(x), y_2_r(y)].join("");
 const sq_2_xy = (sq) => [f_2_x(sq[0]), r_2_y(sq[1])];
 
 const FENcastle_2_castle = (c) => { return {
