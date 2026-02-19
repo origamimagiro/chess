@@ -4,16 +4,25 @@
   <meta charset="UTF-8">
   <title>Chess</title>
   <style>
-    button, div, textarea  { position: absolute; }
-    #reset  { top: 155px; left: 280px; }
-    #undo   { top: 185px; left: 280px; }
-    #dump   { top: 215px; left: 280px; }
-    #submit { top: 245px; left: 280px; }
-    #data   { top: 280px; left: 10px; font-family: monospace; resize: none; }
-    .square { width:  32px; height:  32px; background-size: cover; }
-    .took   { width:  16px; height:  16px; background-size: cover; }
-    #board  { width: 256px; height: 256px; border: 2px solid black; }
-    #taken  { width: 256px; height: 32px; left: 280px; }
+    button, div, textarea  { position: absolute; background-size: cover; }
+    textarea { font-family: monospace; font-size: 12px; resize: none;
+        box-shadow: 0px 0px 0px 0px #000;  }
+    button { background-color: #DDD; width: 64px; height: 32px;
+        border: 1px solid black; }
+    button:hover  { background-color: #FFF; }
+    button:active { background-color: #DDD; }
+    #reset  { top: 144px; left: 288px; }
+    #undo   { top: 176px; left: 288px; }
+    #dump   { top: 208px; left: 288px; }
+    #submit { top: 240px; left: 288px; }
+    #data   { top: 288px; left: 16px; }
+    #game   { top: 64px; left: 368px; width: 172px; height: 204px; }
+    .square { width:  32px; height:  32px; }
+    .taken  { width:  16px; height:  16px; }
+    #board  { width: 256px; height: 256px;
+        box-shadow: 0px 0px 0px 1px #000; left: 16px; top: 16px; }
+    #grave  { width: 256px; height: 32px; top: 16px; left: 288px;
+        box-shadow: 0px 0px 0px 0.5px #000; }
     .light  { background-color: #DDD; }
     .dark   { background-color: #888; }
     .active { background-color: #FFF; }
